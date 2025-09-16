@@ -1,0 +1,66 @@
+[13-Sep-2025 23:30:41 Africa/Lagos] Database connection successful
+[13-Sep-2025 23:30:48 Africa/Lagos] Database connection successful
+[13-Sep-2025 23:30:50 Africa/Lagos] Database connection successful
+[13-Sep-2025 23:31:00 Africa/Lagos] PHP Warning:  require_once(/home/megacar1/registration.megacarepharmacyng.com/includes/bootstrap.php): Failed to open stream: No such file or directory in /home/megacar1/registration.megacarepharmacyng.com/login.php on line 2
+[13-Sep-2025 23:31:00 Africa/Lagos] PHP Fatal error:  Uncaught Error: Failed opening required '/home/megacar1/registration.megacarepharmacyng.com/includes/bootstrap.php' (include_path='.:/opt/cpanel/ea-php81/root/usr/share/pear') in /home/megacar1/registration.megacarepharmacyng.com/login.php:2
+Stack trace:
+#0 {main}
+  thrown in /home/megacar1/registration.megacarepharmacyng.com/login.php on line 2
+[13-Sep-2025 23:33:28 Africa/Lagos] Database connection successful
+[13-Sep-2025 23:33:36 Africa/Lagos] Database connection successful
+[13-Sep-2025 23:33:36 Africa/Lagos] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed after headers have already been sent in /home/megacar1/registration.megacarepharmacyng.com/includes/auth.php on line 13
+[13-Sep-2025 23:33:36 Africa/Lagos] PHP Warning:  session_start(): Session cannot be started after headers have already been sent in /home/megacar1/registration.megacarepharmacyng.com/includes/auth.php on line 15
+[13-Sep-2025 23:33:36 Africa/Lagos] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/megacar1/registration.megacarepharmacyng.com/includes/config.php:23) in /home/megacar1/registration.megacarepharmacyng.com/includes/bootstrap.php on line 118
+[13-Sep-2025 23:33:50 Africa/Lagos] Database connection successful
+[13-Sep-2025 23:33:50 Africa/Lagos] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed after headers have already been sent in /home/megacar1/registration.megacarepharmacyng.com/includes/auth.php on line 13
+[13-Sep-2025 23:33:50 Africa/Lagos] PHP Warning:  session_start(): Session cannot be started after headers have already been sent in /home/megacar1/registration.megacarepharmacyng.com/includes/auth.php on line 15
+[13-Sep-2025 23:33:50 Africa/Lagos] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/megacar1/registration.megacarepharmacyng.com/includes/config.php:23) in /home/megacar1/registration.megacarepharmacyng.com/includes/bootstrap.php on line 118
+[13-Sep-2025 23:33:52 Africa/Lagos] Database connection successful
+[13-Sep-2025 23:33:52 Africa/Lagos] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed after headers have already been sent in /home/megacar1/registration.megacarepharmacyng.com/includes/auth.php on line 13
+[13-Sep-2025 23:33:52 Africa/Lagos] PHP Warning:  session_start(): Session cannot be started after headers have already been sent in /home/megacar1/registration.megacarepharmacyng.com/includes/auth.php on line 15
+[13-Sep-2025 23:33:52 Africa/Lagos] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/megacar1/registration.megacarepharmacyng.com/includes/config.php:23) in /home/megacar1/registration.megacarepharmacyng.com/includes/bootstrap.php on line 118
+[13-Sep-2025 23:33:56 Africa/Lagos] Database connection successful
+[13-Sep-2025 23:33:56 Africa/Lagos] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed after headers have already been sent in /home/megacar1/registration.megacarepharmacyng.com/includes/auth.php on line 13
+[13-Sep-2025 23:33:56 Africa/Lagos] PHP Warning:  session_start(): Session cannot be started after headers have already been sent in /home/megacar1/registration.megacarepharmacyng.com/includes/auth.php on line 15
+[13-Sep-2025 23:33:56 Africa/Lagos] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/megacar1/registration.megacarepharmacyng.com/includes/config.php:23) in /home/megacar1/registration.megacarepharmacyng.com/includes/bootstrap.php on line 118
+[13-Sep-2025 23:34:03 Africa/Lagos] Database connection successful
+[13-Sep-2025 23:34:03 Africa/Lagos] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed after headers have already been sent in /home/megacar1/registration.megacarepharmacyng.com/includes/auth.php on line 13
+[13-Sep-2025 23:34:03 Africa/Lagos] PHP Warning:  session_start(): Session cannot be started after headers have already been sent in /home/megacar1/registration.megacarepharmacyng.com/includes/auth.php on line 15
+[13-Sep-2025 23:34:03 Africa/Lagos] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/megacar1/registration.megacarepharmacyng.com/includes/config.php:23) in /home/megacar1/registration.megacarepharmacyng.com/includes/bootstrap.php on line 118
+[13-Sep-2025 23:34:36 Africa/Lagos] Database connection successful
+[13-Sep-2025 23:34:38 Africa/Lagos] Database connection successful
+[13-Sep-2025 23:34:38 Africa/Lagos] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed after headers have already been sent in /home/megacar1/registration.megacarepharmacyng.com/includes/auth.php on line 13
+[13-Sep-2025 23:34:38 Africa/Lagos] PHP Warning:  session_start(): Session cannot be started after headers have already been sent in /home/megacar1/registration.megacarepharmacyng.com/includes/auth.php on line 15
+[13-Sep-2025 23:34:38 Africa/Lagos] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/megacar1/registration.megacarepharmacyng.com/includes/config.php:23) in /home/megacar1/registration.megacarepharmacyng.com/includes/bootstrap.php on line 118
+[13-Sep-2025 23:38:33 Africa/Lagos] Database connection successful
+[13-Sep-2025 23:38:35 Africa/Lagos] Database connection successful
+[13-Sep-2025 23:38:35 Africa/Lagos] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed after headers have already been sent in /home/megacar1/registration.megacarepharmacyng.com/includes/auth.php on line 13
+[13-Sep-2025 23:38:35 Africa/Lagos] PHP Warning:  session_start(): Session cannot be started after headers have already been sent in /home/megacar1/registration.megacarepharmacyng.com/includes/auth.php on line 15
+[13-Sep-2025 23:38:35 Africa/Lagos] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/megacar1/registration.megacarepharmacyng.com/includes/config.php:23) in /home/megacar1/registration.megacarepharmacyng.com/includes/bootstrap.php on line 118
+[13-Sep-2025 23:44:00 Africa/Lagos] PHP Warning:  session_set_cookie_params(): Session cookie parameters cannot be changed after headers have already been sent in /home/megacar1/registration.megacarepharmacyng.com/includes/auth.php on line 13
+[13-Sep-2025 23:44:00 Africa/Lagos] PHP Warning:  session_start(): Session cannot be started after headers have already been sent in /home/megacar1/registration.megacarepharmacyng.com/includes/auth.php on line 15
+[13-Sep-2025 23:44:00 Africa/Lagos] PHP Warning:  Cannot modify header information - headers already sent by (output started at /home/megacar1/registration.megacarepharmacyng.com/includes/config.php:23) in /home/megacar1/registration.megacarepharmacyng.com/includes/bootstrap.php on line 118
+[13-Sep-2025 23:53:46 Africa/Lagos] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home/megacar1/registration.megacarepharmacyng.com/admin_view.php on line 112
+[13-Sep-2025 23:53:46 Africa/Lagos] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home/megacar1/registration.megacarepharmacyng.com/admin_view.php on line 113
+[13-Sep-2025 23:53:46 Africa/Lagos] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home/megacar1/registration.megacarepharmacyng.com/admin_view.php on line 112
+[13-Sep-2025 23:53:46 Africa/Lagos] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home/megacar1/registration.megacarepharmacyng.com/admin_view.php on line 113
+[13-Sep-2025 23:55:10 Africa/Lagos] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home/megacar1/registration.megacarepharmacyng.com/admin_view.php on line 112
+[13-Sep-2025 23:55:10 Africa/Lagos] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home/megacar1/registration.megacarepharmacyng.com/admin_view.php on line 113
+[13-Sep-2025 23:55:10 Africa/Lagos] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home/megacar1/registration.megacarepharmacyng.com/admin_view.php on line 112
+[13-Sep-2025 23:55:10 Africa/Lagos] PHP Deprecated:  htmlspecialchars(): Passing null to parameter #1 ($string) of type string is deprecated in /home/megacar1/registration.megacarepharmacyng.com/admin_view.php on line 113
+[14-Sep-2025 18:52:40 Africa/Lagos] Searching for ID: reg-68c700a120918
+[14-Sep-2025 18:52:40 Africa/Lagos] Total records in database: 260
+[14-Sep-2025 18:52:42 Africa/Lagos] Searching for ID: reg-68c700a120918
+[14-Sep-2025 18:52:42 Africa/Lagos] Total records in database: 260
+[14-Sep-2025 18:52:43 Africa/Lagos] Searching for ID: reg-68c700a120918
+[14-Sep-2025 18:52:43 Africa/Lagos] Total records in database: 260
+[14-Sep-2025 18:52:43 Africa/Lagos] Searching for ID: reg-68c700a120918
+[14-Sep-2025 18:52:43 Africa/Lagos] Total records in database: 260
+[14-Sep-2025 18:53:51 Africa/Lagos] Searching for ID: reg-68c700a120918
+[14-Sep-2025 18:53:51 Africa/Lagos] Total records in database: 260
+[14-Sep-2025 18:55:52 Africa/Lagos] Searching for ID: reg-68c7018246254
+[14-Sep-2025 18:55:52 Africa/Lagos] Total records in database: 261
+[14-Sep-2025 19:00:40 Africa/Lagos] Searching for ID: reg-68c7024427ce5
+[14-Sep-2025 19:00:40 Africa/Lagos] Total records in database: 262
+[15-Sep-2025 13:19:42 Africa/Lagos] Searching for ID: reg-68c8043b37982
+[15-Sep-2025 13:19:42 Africa/Lagos] Total records in database: 264

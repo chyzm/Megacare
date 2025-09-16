@@ -1,0 +1,122 @@
+body {
+    padding: 20px;
+    font-family: Arial, sans-serif;
+}
+
+/* Header Styles */
+header {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.logo {
+    height: 50px;
+    width: auto;
+}
+
+.whatsapp-icon {
+    color: green; /* Adjust the color to any shade of green you prefer */
+    text-decoration: none; /* Remove any underline or text decoration */
+    font-size: 1.5rem; /* Slightly larger size, you can increase this value if needed */
+  }
+  
+
+/* Form Styles */
+.is-invalid {
+    border-color: #dc3545 !important;
+}
+
+/* Admin Button */
+#adminAccessBtn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    padding: 10px 15px;
+    background: #212529;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    transition: all 0.3s;
+}
+
+#adminAccessBtn:hover {
+    background: #0d6efd;
+    transform: translateY(-2px);
+}
+
+/* Admin Section */
+#adminSection {
+    margin-top: 30px;
+}
+
+#qrCodeContainer {
+    margin-top: 40px; /* Adjust as needed for spacing */
+    text-align: center; /* Center the content within */
+    margin-left: auto;  /* Push the container to the right */
+    margin-right: auto; /* Push the container to the left */
+    display: block;     /* Ensure it behaves as a block-level element for margin auto to work */
+    /* Optional: You can set a max-width if you don't want it to stretch full width */
+    /* max-width: 500px; */
+}
+
+#qrcode {
+    display: inline-block; /* Allows the div to take only the necessary width */
+    /* You can add further styling to the QR code div here if needed */
+}
+
+/* Footer Styles */
+footer {
+    background: #212529 !important;
+    margin-top: 50px;
+}
+
+footer a:hover {
+    color: #0d6efd !important;
+    text-decoration: underline !important;
+}
+
+.social-links a {
+    display: inline-block;
+    width: 40px;
+    height: 40px;
+    line-height: 40px;
+    text-align: center;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%;
+    transition: all 0.3s;
+}
+
+.social-links a:hover {
+    background: #0d6efd;
+    transform: translateY(-3px);
+}
+
+.x-logo {
+    vertical-align: middle;
+    height: 20px;
+    width: auto;
+    margin-bottom: 3px;
+}
+
+/* Print Styles */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+
+    body {
+        padding: 0;
+        font-size: 12px;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+    }
+
+    #qrCodeContainer {
+        text-align: center !important; /* Ensure centering in print as well */
+    }
+}
