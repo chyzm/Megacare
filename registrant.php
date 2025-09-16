@@ -47,7 +47,7 @@ try {
     }
     
     // Get vaccination status
-    $stmt = $pdo->prepare("SELECT * FROM vaccination_status WHERE client_id = ?");
+    $stmt = $pdo->prepare("SELECT * FROM vaccination_status WHERE client_id = ? ORDER BY id DESC LIMIT 1");
     $stmt->execute([$registrant['id']]);
     $vaccination = $stmt->fetch(PDO::FETCH_ASSOC);
     
@@ -175,12 +175,15 @@ try {
                 <div class="vaccination-status">
                     <?php if ($vaccination['first_dose']): ?>
                         <span class="badge bg-success me-1"><i class="fas fa-check"></i> First Dose</span>
+                        <div class="small text-muted ms-2">Taken: <?= htmlspecialchars($vaccination['first_dose_date_taken'] ?? '') ?><?= ($vaccination['first_dose_next_date'] ? ' · Next: ' . htmlspecialchars($vaccination['first_dose_next_date']) : '') ?></div>
                     <?php endif; ?>
                     <?php if ($vaccination['second_dose']): ?>
                         <span class="badge bg-success me-1"><i class="fas fa-check"></i> Second Dose</span>
+                        <div class="small text-muted ms-2">Taken: <?= htmlspecialchars($vaccination['second_dose_date_taken'] ?? '') ?><?= ($vaccination['second_dose_next_date'] ? ' · Next: ' . htmlspecialchars($vaccination['second_dose_next_date']) : '') ?></div>
                     <?php endif; ?>
                     <?php if ($vaccination['final_dose']): ?>
                         <span class="badge bg-success me-1"><i class="fas fa-check"></i> Vaccination Complete</span>
+                        <div class="small text-muted ms-2">Taken: <?= htmlspecialchars($vaccination['final_dose_date_taken'] ?? '') ?></div>
                     <?php endif; ?>
                     <?php if (!$vaccination['first_dose'] && !$vaccination['second_dose'] && !$vaccination['final_dose']): ?>
                         <span class="badge bg-secondary">No vaccinations recorded</span>
