@@ -81,6 +81,18 @@
                     <a href="admin_view.php" class="btn btn-info mt-auto">View Clients</a>
                 </div>
             </div>
+
+            <!-- Patient Certificate Lookup -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card feature-card h-100 text-center p-4">
+                    <div class="feature-icon text-warning">
+                        <i class="fas fa-certificate"></i>
+                    </div>
+                    <h5>Certificate Lookup</h5>
+                    <p class="text-muted">Let patients view their vaccination certificate by registration number</p>
+                    <a href="vaccination_certificate.php" class="btn btn-warning mt-auto">Open Lookup</a>
+                </div>
+            </div>
         </div>
 
         <div class="row mt-5">
@@ -98,6 +110,7 @@
                                     <li>Training form (with 6-digit code verification)</li>
                                     <li>Employment form (with 6-digit code verification)</li>
                                     <li>QR code generation for each registrant</li>
+                                    <li>Public vaccination certificate lookup</li>
                                 </ul>
                             </div>
                             <div class="col-md-6">

@@ -105,6 +105,7 @@ if (isset($_POST['action']) && $_POST['action'] == 'clear_codes') {
 // Handle vaccination status update
 if (isset($_POST['action']) && $_POST['action'] == 'update_vaccination') {
     $client_id = $_POST['client_id'];
+    $vaccination_type = trim($_POST['vaccination_type'] ?? '');
     $first_dose = isset($_POST['first_dose']) ? 1 : 0;
     $second_dose = isset($_POST['second_dose']) ? 1 : 0;
     $final_dose = isset($_POST['final_dose']) ? 1 : 0;
@@ -115,37 +116,50 @@ if (isset($_POST['action']) && $_POST['action'] == 'update_vaccination') {
     $second_dose_next_date  = trim($_POST['second_dose_next_date'] ?? '') ?: null;
     $final_dose_date_taken  = trim($_POST['final_dose_date_taken'] ?? '') ?: null;
     
-    // Require next vaccination dates when doses 1 or 2 are checked
-    if ($first_dose && !$first_dose_next_date) {
+    // Require administered dates for completed doses and follow-up dates for doses 1 and 2.
+    if (!in_array($vaccination_type, ['Hep B vaccine', 'Hep C vaccine', 'Other vaccine'], true)) {
+        $error_msg = "Please select a valid vaccine type.";
+    } elseif ($first_dose && !$first_dose_date_taken) {
+        $error_msg = "Date taken is required for First Dose.";
+    } elseif ($first_dose && !$first_dose_next_date) {
         $error_msg = "Next vaccination date is required for First Dose.";
+    } elseif ($second_dose && !$second_dose_date_taken) {
+        $error_msg = "Date taken is required for Second Dose.";
     } elseif ($second_dose && !$second_dose_next_date) {
         $error_msg = "Next vaccination date is required for Second Dose.";
+    } elseif ($final_dose && !$final_dose_date_taken) {
+        $error_msg = "Date taken is required for Final Dose.";
     }
 
     try {
         if (!isset($error_msg)) {
             // Update-first to avoid duplicate rows per client
             $upd = $pdo->prepare("UPDATE vaccination_status SET 
+                    vaccination_type = ?,
                     first_dose = ?, first_dose_date_taken = ?, first_dose_next_date = ?,
                     second_dose = ?, second_dose_date_taken = ?, second_dose_next_date = ?,
                     final_dose = ?, final_dose_date_taken = ?
                 WHERE client_id = ?");
             $upd->execute([
+                $vaccination_type,
                 $first_dose, $first_dose_date_taken, $first_dose_next_date,
                 $second_dose, $second_dose_date_taken, $second_dose_next_date,
                 $final_dose, $final_dose_date_taken,
                 $client_id
             ]);
 
-            if ($upd->rowCount() === 0) {
+            $exists = $pdo->prepare("SELECT COUNT(*) FROM vaccination_status WHERE client_id = ?");
+            $exists->execute([$client_id]);
+
+            if ((int)$exists->fetchColumn() === 0) {
                 $ins = $pdo->prepare("INSERT INTO vaccination_status (
-                        client_id,
+                        client_id, vaccination_type,
                         first_dose, first_dose_date_taken, first_dose_next_date,
                         second_dose, second_dose_date_taken, second_dose_next_date,
                         final_dose, final_dose_date_taken
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 $ins->execute([
-                    $client_id,
+                    $client_id, $vaccination_type,
                     $first_dose, $first_dose_date_taken, $first_dose_next_date,
                     $second_dose, $second_dose_date_taken, $second_dose_next_date,
                     $final_dose, $final_dose_date_taken
@@ -177,7 +191,7 @@ if (isset($_GET['search']) && !empty(trim($_GET['search']))) {
     $search_param = trim($_GET['search']);
     $search_query = "WHERE c.id LIKE ? OR c.first_name LIKE ? OR c.last_name LIKE ? OR CONCAT(c.first_name, ' ', c.last_name) LIKE ?";
     $search_value = '%' . $search_param . '%';
-    $stmt = $pdo->prepare("\n        SELECT c.id, c.first_name, c.last_name, c.email, c.mobile,\n               COALESCE(v.first_dose, 0) as first_dose,\n               COALESCE(v.second_dose, 0) as second_dose,\n               COALESCE(v.final_dose, 0) as final_dose,\n               v.first_dose_date_taken, v.first_dose_next_date,\n               v.second_dose_date_taken, v.second_dose_next_date,\n               v.final_dose_date_taken\n        FROM clients c \n        LEFT JOIN (\n            SELECT vs1.* FROM vaccination_status vs1\n            INNER JOIN (\n                SELECT client_id, MAX(id) AS max_id\n                FROM vaccination_status\n                GROUP BY client_id\n            ) t ON vs1.client_id = t.client_id AND vs1.id = t.max_id\n        ) v ON c.id = v.client_id\n        $search_query\n        ORDER BY c.created_at DESC\n    ");
+    $stmt = $pdo->prepare("\n        SELECT c.id, c.first_name, c.last_name, c.email, c.mobile, c.reason,\n               COALESCE(v.vaccination_type, c.reason) as vaccination_type,\n               COALESCE(v.first_dose, 0) as first_dose,\n               COALESCE(v.second_dose, 0) as second_dose,\n               COALESCE(v.final_dose, 0) as final_dose,\n               v.first_dose_date_taken, v.first_dose_next_date,\n               v.second_dose_date_taken, v.second_dose_next_date,\n               v.final_dose_date_taken\n        FROM clients c \n        LEFT JOIN (\n            SELECT vs1.* FROM vaccination_status vs1\n            INNER JOIN (\n                SELECT client_id, MAX(id) AS max_id\n                FROM vaccination_status\n                GROUP BY client_id\n            ) t ON vs1.client_id = t.client_id AND vs1.id = t.max_id\n        ) v ON c.id = v.client_id\n        $search_query\n        ORDER BY c.created_at DESC\n    ");
         $stmt->execute([$search_value, $search_value, $search_value, $search_value]);
     $clients = $stmt->fetchAll();
 }
@@ -390,7 +404,8 @@ if (isset($_GET['search']) && !empty(trim($_GET['search']))) {
                                                 <td>
                                                     <small>
                                                         <?= htmlspecialchars($client['email']) ?><br>
-                                                        <?= htmlspecialchars($client['mobile']) ?>
+                                                        <?= htmlspecialchars($client['mobile']) ?><br>
+                                                        <span class="text-muted"><?= htmlspecialchars($client['vaccination_type'] ?? 'Not selected') ?></span>
                                                     </small>
                                                 </td>
                                                 <td>
@@ -403,7 +418,7 @@ if (isset($_GET['search']) && !empty(trim($_GET['search']))) {
                                                 </td>
                                                 <td>
                             <button class="btn btn-sm btn-outline-primary" 
-                                onclick="openVaccinationModal('<?= htmlspecialchars($client['id']) ?>', '<?= htmlspecialchars($client['first_name'] . ' ' . $client['last_name']) ?>', <?= (int)$client['first_dose'] ?>, <?= (int)$client['second_dose'] ?>, <?= (int)$client['final_dose'] ?>, '<?= htmlspecialchars($client['first_dose_date_taken'] ?? '') ?>', '<?= htmlspecialchars($client['first_dose_next_date'] ?? '') ?>', '<?= htmlspecialchars($client['second_dose_date_taken'] ?? '') ?>', '<?= htmlspecialchars($client['second_dose_next_date'] ?? '') ?>', '<?= htmlspecialchars($client['final_dose_date_taken'] ?? '') ?>')">
+                                onclick="openVaccinationModal('<?= htmlspecialchars($client['id']) ?>', '<?= htmlspecialchars($client['first_name'] . ' ' . $client['last_name']) ?>', '<?= htmlspecialchars($client['vaccination_type'] ?? '') ?>', <?= (int)$client['first_dose'] ?>, <?= (int)$client['second_dose'] ?>, <?= (int)$client['final_dose'] ?>, '<?= htmlspecialchars($client['first_dose_date_taken'] ?? '') ?>', '<?= htmlspecialchars($client['first_dose_next_date'] ?? '') ?>', '<?= htmlspecialchars($client['second_dose_date_taken'] ?? '') ?>', '<?= htmlspecialchars($client['second_dose_next_date'] ?? '') ?>', '<?= htmlspecialchars($client['final_dose_date_taken'] ?? '') ?>')">
                                                         <i class="fas fa-edit"></i>
                                                     </button>
                                                 </td>
@@ -436,6 +451,16 @@ if (isset($_GET['search']) && !empty(trim($_GET['search']))) {
                         <input type="hidden" name="client_id" id="modal_client_id">
                         
                         <h6 id="modal_client_name"></h6>
+
+                        <div class="mb-3">
+                            <label class="form-label" for="vaccination_type">Vaccine Type</label>
+                            <select class="form-select" name="vaccination_type" id="vaccination_type" required>
+                                <option value="">Select vaccine type</option>
+                                <option value="Hep B vaccine">Hep B vaccine</option>
+                                <option value="Hep C vaccine">Hep C vaccine</option>
+                                <option value="Other vaccine">Other vaccine</option>
+                            </select>
+                        </div>
                         
                         <div class="form-check mb-2">
                             <input class="form-check-input" type="checkbox" name="first_dose" id="first_dose">
@@ -445,11 +470,11 @@ if (isset($_GET['search']) && !empty(trim($_GET['search']))) {
                         </div>
                         <div class="row g-2 mb-3">
                             <div class="col">
-                                <label class="form-label small">Date Taken</label>
+                                <label class="form-label small">Vaccine Date</label>
                                 <input type="date" class="form-control" name="first_dose_date_taken" id="first_dose_date_taken">
                             </div>
                             <div class="col">
-                                <label class="form-label small">Next Date</label>
+                                <label class="form-label small">Next Dose Date</label>
                                 <input type="date" class="form-control" name="first_dose_next_date" id="first_dose_next_date">
                             </div>
                         </div>
@@ -462,11 +487,11 @@ if (isset($_GET['search']) && !empty(trim($_GET['search']))) {
                         </div>
                         <div class="row g-2 mb-3">
                             <div class="col">
-                                <label class="form-label small">Date Taken</label>
+                                <label class="form-label small">Vaccine Date</label>
                                 <input type="date" class="form-control" name="second_dose_date_taken" id="second_dose_date_taken">
                             </div>
                             <div class="col">
-                                <label class="form-label small">Next Date</label>
+                                <label class="form-label small">Next Dose Date</label>
                                 <input type="date" class="form-control" name="second_dose_next_date" id="second_dose_next_date">
                             </div>
                         </div>
@@ -478,7 +503,7 @@ if (isset($_GET['search']) && !empty(trim($_GET['search']))) {
                             </label>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label small">Date Taken</label>
+                            <label class="form-label small">Vaccine Date</label>
                             <input type="date" class="form-control" name="final_dose_date_taken" id="final_dose_date_taken">
                         </div>
                     </div>
@@ -633,9 +658,10 @@ if (isset($_GET['search']) && !empty(trim($_GET['search']))) {
                 });
             }
         }
-        function openVaccinationModal(clientId, clientName, firstDose, secondDose, finalDose, f1Taken='', f1Next='', f2Taken='', f2Next='', fFinalTaken='') {
+        function openVaccinationModal(clientId, clientName, vaccinationType, firstDose, secondDose, finalDose, f1Taken='', f1Next='', f2Taken='', f2Next='', fFinalTaken='') {
             document.getElementById('modal_client_id').value = clientId;
             document.getElementById('modal_client_name').textContent = clientName;
+            document.getElementById('vaccination_type').value = vaccinationType || '';
             document.getElementById('first_dose').checked = firstDose == 1;
             document.getElementById('second_dose').checked = secondDose == 1;
             document.getElementById('final_dose').checked = finalDose == 1;
@@ -664,15 +690,24 @@ if (isset($_GET['search']) && !empty(trim($_GET['search']))) {
             new bootstrap.Modal(document.getElementById('vaccinationModal')).show();
         }
 
-        // Client-side validation: require next date for first and second doses
+        // Client-side validation for completed dose dates.
         document.querySelector('#vaccinationModal form').addEventListener('submit', function(e) {
             const fd = document.getElementById('first_dose').checked;
             const sd = document.getElementById('second_dose').checked;
+            const ld = document.getElementById('final_dose').checked;
+            const vt = document.getElementById('vaccination_type').value;
+            const f1d = document.getElementById('first_dose_date_taken').value;
             const f1n = document.getElementById('first_dose_next_date').value;
+            const f2d = document.getElementById('second_dose_date_taken').value;
             const f2n = document.getElementById('second_dose_next_date').value;
+            const f3d = document.getElementById('final_dose_date_taken').value;
             let msg = '';
-            if (fd && !f1n) msg = 'Please provide Next Date for First Dose.';
-            else if (sd && !f2n) msg = 'Please provide Next Date for Second Dose.';
+            if (!vt) msg = 'Please select a vaccine type.';
+            else if (fd && !f1d) msg = 'Please provide Vaccine Date for First Dose.';
+            else if (fd && !f1n) msg = 'Please provide Next Dose Date for First Dose.';
+            else if (sd && !f2d) msg = 'Please provide Vaccine Date for Second Dose.';
+            else if (sd && !f2n) msg = 'Please provide Next Dose Date for Second Dose.';
+            else if (ld && !f3d) msg = 'Please provide Vaccine Date for Final Dose.';
             if (msg) {
                 e.preventDefault();
                 alert(msg);

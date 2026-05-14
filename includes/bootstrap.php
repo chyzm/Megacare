@@ -63,6 +63,62 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS password_resets (
     UNIQUE(token_hash)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
 
+// Vaccination tracking. Keep this migration here so authenticated workflows
+// share the same schema setup instead of relying on one page to add columns.
+try {
+        $pdo->exec("CREATE TABLE IF NOT EXISTS vaccination_status (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            client_id VARCHAR(64) NOT NULL,
+            vaccination_type VARCHAR(100) NULL,
+            first_dose TINYINT(1) NOT NULL DEFAULT 0,
+            first_dose_date_taken DATE NULL,
+            first_dose_next_date DATE NULL,
+            second_dose TINYINT(1) NOT NULL DEFAULT 0,
+            second_dose_date_taken DATE NULL,
+            second_dose_next_date DATE NULL,
+            final_dose TINYINT(1) NOT NULL DEFAULT 0,
+            final_dose_date_taken DATE NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_vaccination_client (client_id)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        $colCheck = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'vaccination_status' AND COLUMN_NAME = ?");
+        $ensureVaccCol = function($name, $ddl) use ($pdo, $colCheck) {
+                $colCheck->execute([$name]);
+                if ((int)$colCheck->fetchColumn() === 0) {
+                        $pdo->exec("ALTER TABLE vaccination_status ADD COLUMN " . $ddl);
+                }
+        };
+        $ensureVaccCol('vaccination_type', "vaccination_type VARCHAR(100) NULL AFTER client_id");
+        $ensureVaccCol('first_dose_date_taken', "first_dose_date_taken DATE NULL AFTER first_dose");
+        $ensureVaccCol('first_dose_next_date', "first_dose_next_date DATE NULL AFTER first_dose_date_taken");
+        $ensureVaccCol('second_dose_date_taken', "second_dose_date_taken DATE NULL AFTER second_dose");
+        $ensureVaccCol('second_dose_next_date', "second_dose_next_date DATE NULL AFTER second_dose_date_taken");
+        $ensureVaccCol('final_dose_date_taken', "final_dose_date_taken DATE NULL AFTER final_dose");
+
+        $clientType = $pdo->prepare("SELECT DATA_TYPE, CHARACTER_MAXIMUM_LENGTH FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'vaccination_status' AND COLUMN_NAME = 'client_id'");
+        $clientType->execute();
+        $clientMeta = $clientType->fetch(PDO::FETCH_ASSOC);
+        if ($clientMeta && (strtolower($clientMeta['DATA_TYPE']) !== 'varchar' || (int)$clientMeta['CHARACTER_MAXIMUM_LENGTH'] < 64)) {
+                $pdo->exec("ALTER TABLE vaccination_status MODIFY client_id VARCHAR(64) NOT NULL");
+        }
+
+        $pdo->exec("ALTER TABLE vaccination_status
+            MODIFY first_dose TINYINT(1) NOT NULL DEFAULT 0,
+            MODIFY second_dose TINYINT(1) NOT NULL DEFAULT 0,
+            MODIFY final_dose TINYINT(1) NOT NULL DEFAULT 0");
+
+        $idxStmt = $pdo->prepare("SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'vaccination_status' AND INDEX_NAME = 'uniq_vacc_client'");
+        $idxStmt->execute();
+        if ((int)$idxStmt->fetchColumn() === 0) {
+                $pdo->exec("DELETE v1 FROM vaccination_status v1 JOIN vaccination_status v2 ON v1.client_id = v2.client_id AND v1.id < v2.id");
+                $pdo->exec("ALTER TABLE vaccination_status ADD UNIQUE KEY uniq_vacc_client (client_id)");
+        }
+} catch (Throwable $e) {
+        error_log('Vaccination migration failed: ' . $e->getMessage());
+}
+
 // Helper: log audit
 function log_audit($action, $target_user_id = null, $details = null) {
         global $pdo;

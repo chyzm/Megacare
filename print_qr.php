@@ -10,7 +10,7 @@ if (!$registrantId) {
 }
 
 // Fetch registrant data
-$stmt = $pdo->prepare("SELECT * FROM registrants WHERE id = ?");
+$stmt = $pdo->prepare("SELECT * FROM clients WHERE id = ?");
 $stmt->execute([$registrantId]);
 $registrant = $stmt->fetch();
 
@@ -67,7 +67,7 @@ if (!$registrant) {
 <body onload="window.print()">
     <div class="card-header">
         <h3 style="margin:0;">MegaCare Pharmacy</h3>
-        <h4 style="margin:0;">Hepatitis B Vaccine</h4>
+        <h4 style="margin:0;"><?= htmlspecialchars($registrant['reason']) ?></h4>
     </div>
     
     <div class="card-body">
@@ -76,7 +76,7 @@ if (!$registrant) {
             <p><strong>ID:</strong> <?= htmlspecialchars($registrant['id']) ?></p>
             <p><strong>Date:</strong> <?= date('m/d/Y', strtotime($registrant['created_at'])) ?></p>
         </div>
-        <img src="<?= htmlspecialchars($registrant['qr_code_file']) ?>" class="qr-code" alt="Vaccine QR Code">
+        <img src="https://api.qrcode-monkey.com/qr/custom?size=200&data=<?= urlencode("https://$_SERVER[HTTP_HOST]/megacare_phamacy/registrant.php?id=" . $registrant['id']) ?>" class="qr-code" alt="Vaccine QR Code">
     </div>
     
     <div class="card-footer">

@@ -201,6 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Generate QR Code URL
             // Build details URL relative to current directory (works when app is in a subfolder)
             const detailsUrl = new URL(`registrant.php?id=${registrantId}`, window.location.href).toString();
+            const certificateUrl = new URL(`vaccination_certificate.php?id=${registrantId}`, window.location.href).toString();
             const qrCodeUrl = `https://api.qrcode-monkey.com/qr/custom?size=300&data=${encodeURIComponent(detailsUrl)}`;
             
             // Create download link for QR code
@@ -227,6 +228,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="mt-3">
                         <a href="${detailsUrl}" class="btn btn-outline-primary flex-grow-1">
                             <i class="fas fa-id-card me-2"></i>View Registration Details
+                        </a>
+                        <a href="${certificateUrl}" class="btn btn-outline-success flex-grow-1 mt-2">
+                            <i class="fas fa-certificate me-2"></i>View Certificate
                         </a>
                     </div>
                 </div>

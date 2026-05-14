@@ -55,6 +55,8 @@ try {
     error_log("Database error: " . $e->getMessage());
     die(json_encode(['error' => 'Database error']));
 }
+
+$displayVaccineType = $vaccination['vaccination_type'] ?? $registrant['reason'] ?? '';
 ?>
 
 <!DOCTYPE html>
@@ -105,6 +107,13 @@ try {
             margin-top: 30px;
             text-align: center;
         }
+        .action-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 18px;
+        }
         @media print {
             body * { visibility: hidden; }
             .container, .container * { visibility: visible; }
@@ -137,7 +146,7 @@ try {
             </div>
             <div class="detail-item">
                 <span class="detail-label">Reason:</span>
-                <span class="detail-value"><?= htmlspecialchars($registrant['reason']) ?></span>
+                <span class="detail-value"><?= htmlspecialchars($displayVaccineType) ?></span>
             </div>
             <div class="detail-item">
                 <span class="detail-label">Email:</span>
@@ -199,10 +208,13 @@ try {
                 <img src="https://api.qrcode-monkey.com/qr/custom?size=200&data=<?= urlencode("https://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]") ?>" 
                      alt="Registration QR Code" class="img-fluid">
             </div>
-            <div class="d-flex gap-2 mt-3">
-                <button class="btn btn-primary flex-grow-1" onclick="printQRCode()">
+            <div class="action-row">
+                <button class="btn btn-primary" onclick="printQRCode()">
                     <i class="fas fa-print me-2"></i>Print QR Code
                 </button>
+                <a class="btn btn-success" href="vaccination_certificate.php?id=<?= htmlspecialchars($registrant['id']) ?>">
+                    <i class="fas fa-certificate me-2"></i>View Certificate
+                </a>
             </div>
         </div>
     </div>
