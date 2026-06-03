@@ -34,11 +34,18 @@ function doseDone($vaccination, $field) {
 }
 
 function formatCertDate($value) {
-    return $value ? date('F j, Y', strtotime($value)) : 'Not recorded';
+    return $value ? date('F j, Y', strtotime($value)) : 'Pending';
 }
 
-$completedDoses = (int)doseDone($vaccination, 'first_dose') + (int)doseDone($vaccination, 'second_dose') + (int)doseDone($vaccination, 'final_dose');
-$isComplete = $completedDoses === 3;
+function certValue($value, $fallback = 'Not recorded') {
+    $value = trim((string)$value);
+    return $value !== '' ? $value : $fallback;
+}
+
+function doseBatch($vaccination, $field) {
+    return $vaccination && !empty($vaccination[$field]) ? $vaccination[$field] : 'Pending';
+}
+
 $displayVaccineType = $vaccination['vaccination_type'] ?? $registrant['reason'] ?? '';
 $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
     || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
@@ -48,304 +55,320 @@ $scriptPath = $_SERVER['SCRIPT_NAME'] ?? '/megacare_phamacy/vaccination_certific
 $verificationUrl = $registrant
     ? $scheme . '://' . $host . $scriptPath . '?id=' . rawurlencode($registrant['id'])
     : '';
+$qrUrl = $verificationUrl
+    ? 'https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data=' . rawurlencode($verificationUrl)
+    : '';
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vaccination Certificate - MegaCare Pharmacy</title>
+    <title>Certificate of Vaccination - MegaCare Pharmacy</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --brand: #1a9bb5;
-            --brand-dark: #1a3a5c;
-            --brand-mid: #137f96;
-            --brand-light: #e6f5f9;
-            --line: #b7d7e1;
-            --ink: #1f2937;
-            --muted: #64748b;
-            --soft: #f8fafc;
+            --teal: #078f91;
+            --teal-dark: #047073;
+            --ink: #10192b;
+            --muted: #506071;
+            --line: #d8e3e7;
+            --soft: #eaf8f7;
         }
         body {
-            background: linear-gradient(180deg, #f8fbfd 0%, #eef4f7 100%);
-            color: var(--ink);
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
             min-height: 100vh;
+            background: #eef3f5;
+            color: var(--ink);
+            font-family: Arial, Helvetica, sans-serif;
         }
         .topbar {
-            background: linear-gradient(135deg, var(--brand-dark), var(--brand-mid), var(--brand));
+            background: #0b7784;
             color: #fff;
-            padding: 24px 0;
-        }
-        .lookup-card,
-        .certificate {
-            background: #fff;
-            border: 1px solid rgba(26, 155, 181, .16);
-            border-radius: 8px;
-            box-shadow: 0 16px 40px rgba(26, 58, 92, .10);
+            padding: 18px 0;
         }
         .lookup-card {
             max-width: 680px;
             margin: 48px auto;
             padding: 28px;
-        }
-        .certificate {
-            max-width: 980px;
-            margin: 28px auto 48px;
-            padding: 18px;
-        }
-        .cert-frame {
-            min-height: 760px;
-            border: 8px double var(--brand-dark);
-            padding: 28px;
-            position: relative;
-            background:
-                linear-gradient(135deg, rgba(230,245,249,.9), transparent 24%),
-                linear-gradient(315deg, rgba(232,237,244,.95), transparent 24%),
-                #fff;
-        }
-        .cert-frame::before {
-            content: "";
-            position: absolute;
-            inset: 14px;
-            border: 1px solid var(--line);
-            pointer-events: none;
-        }
-        .cert-header {
-            text-align: center;
-            position: relative;
-            z-index: 1;
-            padding: 8px 24px 20px;
-            border-bottom: 2px solid var(--line);
-        }
-        .brand-mark {
-            width: 150px;
-            min-height: 78px;
-            border-radius: 10px;
             background: #fff;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
             border: 1px solid var(--line);
-            box-shadow: 0 10px 28px rgba(26, 58, 92, .12);
-            margin: 0 auto 14px;
-            padding: 10px 14px;
-        }
-        .brand-mark img {
-            display: block;
-            max-width: 126px;
-            max-height: 64px;
-            object-fit: contain;
-        }
-        .cert-kicker {
-            color: var(--brand-mid);
-            font-size: 12px;
-            font-weight: 800;
-            letter-spacing: .2em;
-            text-transform: uppercase;
-            margin-bottom: 8px;
-        }
-        .cert-title {
-            color: var(--brand-dark);
-            font-family: Georgia, "Times New Roman", serif;
-            font-size: clamp(34px, 5vw, 58px);
-            font-weight: 700;
-            line-height: 1;
-            margin: 0;
-            letter-spacing: .02em;
-        }
-        .cert-subtitle {
-            color: var(--muted);
-            font-size: 17px;
-            margin-top: 10px;
-        }
-        .cert-body {
-            padding: 28px 24px 14px;
-            position: relative;
-            z-index: 1;
-        }
-        .attestation {
-            color: var(--muted);
-            font-size: 17px;
-            line-height: 1.75;
-            margin: 0 auto 18px;
-            max-width: 780px;
-            text-align: center;
-        }
-        .patient-name {
-            font-family: Georgia, "Times New Roman", serif;
-            font-size: clamp(32px, 4vw, 48px);
-            font-weight: 700;
-            color: var(--brand-dark);
-            margin: 8px auto 10px;
-            text-align: center;
-            border-bottom: 2px solid var(--line);
-            max-width: 720px;
-            padding-bottom: 8px;
-        }
-        .patient-id {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: var(--soft);
-            border: 1px solid #e2e8f0;
-            border-radius: 999px;
-            padding: 8px 14px;
-            color: var(--muted);
-            font-family: Consolas, "Courier New", monospace;
-        }
-        .cert-summary {
-            display: flex;
-            justify-content: center;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 24px;
-        }
-        .status-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            border-radius: 999px;
-            padding: 10px 16px;
-            font-weight: 700;
-        }
-        .status-complete {
-            background: #e6f5f9;
-            color: #137f96;
-        }
-        .status-progress {
-            background: #e8edf4;
-            color: #1a3a5c;
-        }
-        .meta-row {
-            display: grid;
-            grid-template-columns: 150px 1fr;
-            gap: 12px;
-            padding: 12px 14px;
-            border: 1px solid #e2e8f0;
-            background: rgba(255,255,255,.78);
-        }
-        .meta-row strong {
-            color: var(--muted);
-        }
-        .detail-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin: 22px 0 24px;
-        }
-        .dose-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: #fff;
-            margin-top: 12px;
-            border: 1px solid var(--line);
-        }
-        .dose-table th {
-            background: linear-gradient(180deg, #e6f5f9 0%, #d9eef4 100%);
-            color: var(--brand-dark);
-            font-size: 12px;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-            padding: 12px;
-            border: 1px solid var(--line);
-        }
-        .dose-table td {
-            padding: 13px 12px;
-            border: 1px solid var(--line);
-            color: var(--ink);
-            vertical-align: top;
-        }
-        .dose-status {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-weight: 700;
-            color: var(--brand-dark);
-        }
-        .seal-row {
-            display: grid;
-            grid-template-columns: 1fr 160px 1fr;
-            gap: 22px;
-            align-items: end;
-            margin-top: 36px;
-        }
-        .signature-line {
-            border-top: 2px solid var(--brand-dark);
-            padding-top: 8px;
-            text-align: center;
-            color: var(--muted);
-            font-size: 13px;
-        }
-        .seal {
-            width: 142px;
-            height: 142px;
-            border-radius: 999px;
-            border: 4px double var(--brand-dark);
-            display: grid;
-            place-items: center;
-            text-align: center;
-            color: var(--brand-dark);
-            font-weight: 800;
-            font-size: 12px;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-            background: radial-gradient(circle, #fff 0%, #fff 50%, var(--brand-light) 51%, #d9eef4 100%);
-            margin: 0 auto;
-        }
-        .cert-footer {
-            margin-top: 24px;
-            padding-top: 14px;
-            border-top: 1px solid var(--line);
-            text-align: center;
-            color: var(--muted);
-            font-size: 13px;
-            position: relative;
-            z-index: 1;
-        }
-        .verification-link {
-            display: block;
-            margin-top: 6px;
-            color: var(--brand-dark);
-            font-weight: 700;
-            overflow-wrap: anywhere;
-            text-decoration: none;
-        }
-        .verification-link:hover {
-            color: var(--brand-mid);
-            text-decoration: underline;
+            border-radius: 8px;
+            box-shadow: 0 18px 40px rgba(16, 25, 43, .12);
         }
         .actions {
-            max-width: 920px;
-            margin: 24px auto 0;
+            max-width: 760px;
+            margin: 22px auto 0;
             display: flex;
             justify-content: center;
             gap: 10px;
             flex-wrap: wrap;
         }
         .btn-brand {
-            background: linear-gradient(180deg, #2fb0c8 0%, #1a9bb5 58%, #137f96 100%);
-            border-color: #137f96;
+            background: #078f91;
+            border-color: #078f91;
             color: #fff;
         }
         .btn-brand:hover {
-            background: linear-gradient(180deg, #259fb7 0%, #168da5 58%, #116f83 100%);
-            border-color: #116f83;
+            background: #047073;
+            border-color: #047073;
             color: #fff;
         }
-        @media (max-width: 768px) {
-            .cert-header {
-                text-align: center;
+        .certificate {
+            width: min(760px, calc(100% - 28px));
+            margin: 22px auto 44px;
+            background: #fff;
+            box-shadow: 0 20px 48px rgba(16, 25, 43, .15);
+        }
+        .cert-sheet {
+            min-height: 1000px;
+            padding: 44px 64px 34px;
+            position: relative;
+            overflow: hidden;
+            background:
+                linear-gradient(135deg, rgba(7,143,145,.08) 0 12%, transparent 12% 100%),
+                linear-gradient(315deg, rgba(7,143,145,.08) 0 14%, transparent 14% 100%),
+                #fff;
+        }
+        .cert-sheet::before,
+        .cert-sheet::after {
+            content: "";
+            position: absolute;
+            border: 1px solid rgba(7, 143, 145, .08);
+            pointer-events: none;
+        }
+        .cert-sheet::before {
+            inset: 20px 30px;
+        }
+        .cert-sheet::after {
+            inset: 52px 66px auto auto;
+            width: 140px;
+            height: 86px;
+            background: rgba(10, 125, 130, .04);
+        }
+        .logo-wrap {
+            text-align: center;
+            margin-bottom: 34px;
+        }
+        .logo-wrap img {
+            width: 178px;
+            height: auto;
+            object-fit: contain;
+        }
+        .cert-title {
+            margin: 0;
+            text-align: center;
+            color: #111b30;
+            font-size: 42px;
+            line-height: 1.05;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0;
+        }
+        .cert-subtitle {
+            margin-top: 12px;
+            color: var(--teal);
+            text-align: center;
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+        }
+        .rule {
+            width: 82%;
+            height: 22px;
+            margin: 12px auto 28px;
+            position: relative;
+            border-top: 2px solid rgba(7, 143, 145, .55);
+        }
+        .rule i {
+            position: absolute;
+            left: 50%;
+            top: -13px;
+            transform: translateX(-50%);
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: #fff;
+            background: var(--teal);
+            border: 5px solid #fff;
+            font-size: 13px;
+        }
+        .attestation {
+            max-width: 620px;
+            margin: 0 auto 22px;
+            color: #323b4a;
+            font-size: 16px;
+            line-height: 1.55;
+            text-align: center;
+        }
+        .patient-name {
+            margin: 0 0 28px;
+            color: #10192b;
+            text-align: center;
+            font-size: 34px;
+            line-height: 1.15;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .02em;
+        }
+        .fact-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            column-gap: 58px;
+            row-gap: 24px;
+            max-width: 560px;
+            margin: 0 auto 28px;
+            padding-bottom: 22px;
+            border-bottom: 1px solid var(--line);
+        }
+        .fact {
+            display: grid;
+            grid-template-columns: 48px 1fr;
+            gap: 14px;
+            align-items: center;
+        }
+        .fact-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            background: var(--soft);
+            color: var(--teal);
+            font-size: 19px;
+        }
+        .fact-label {
+            color: #344155;
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+        .fact-value {
+            margin-top: 5px;
+            color: #253041;
+            font-size: 16px;
+            line-height: 1.25;
+        }
+        .section-label {
+            margin: 0 0 10px;
+            color: var(--teal);
+            font-size: 14px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+        .dose-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            overflow: hidden;
+            border: 1px solid var(--line);
+            border-radius: 7px;
+            font-size: 15px;
+        }
+        .dose-table th {
+            padding: 14px 18px;
+            background: var(--teal);
+            color: #fff;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+        .dose-table td {
+            padding: 15px 18px;
+            color: #273244;
+            border-top: 1px solid var(--line);
+            border-right: 1px solid var(--line);
+            background: rgba(255,255,255,.9);
+        }
+        .dose-table td:last-child,
+        .dose-table th:last-child {
+            border-right: 0;
+        }
+        .dose-table tbody tr:first-child td {
+            border-top: 0;
+        }
+        .cert-bottom {
+            display: grid;
+            grid-template-columns: 1fr 158px 1fr;
+            gap: 34px;
+            align-items: end;
+            margin-top: 52px;
+        }
+        .signature-block,
+        .issued-block {
+            text-align: center;
+        }
+        .issued-block {
+            padding-bottom: 45px;
+        }
+        .line-content {
+            height: 72px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+        }
+        .issued-content {
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 13px;
+        }
+        .signature-mark {
+            width: 158px;
+            height: 66px;
+            display: block;
+            object-fit: contain;
+            mix-blend-mode: multiply;
+        }
+        .line {
+            border-top: 2px solid #9eb9bf;
+            padding-top: 10px;
+        }
+        .line-below {
+            border-top: 2px solid #9eb9bf;
+            height: 1px;
+        }
+        .fine-label {
+            color: var(--teal);
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: .04em;
+            text-transform: uppercase;
+        }
+        .fine-value {
+            margin-top: 5px;
+            color: #263245;
+            font-size: 13px;
+            line-height: 1.35;
+        }
+        .qr-block {
+            text-align: center;
+        }
+        .qr-block img {
+            width: 138px;
+            height: 138px;
+            object-fit: contain;
+        }
+        @media (max-width: 720px) {
+            .cert-sheet {
+                padding: 32px 24px;
             }
-            .detail-grid,
-            .seal-row,
-            .meta-row {
+            .cert-title {
+                font-size: 32px;
+            }
+            .fact-grid,
+            .cert-bottom {
                 grid-template-columns: 1fr;
             }
-            .cert-frame {
-                padding: 16px;
+            .cert-bottom {
+                gap: 22px;
             }
         }
         @media print {
@@ -360,123 +383,53 @@ $verificationUrl = $registrant
             }
             body {
                 background: #fff;
-                margin: 0;
             }
             .certificate {
+                width: 194mm;
+                margin: 0 auto;
                 box-shadow: none;
-                margin: 0;
-                max-width: none;
-                padding: 0;
-                border: none;
-                page-break-inside: avoid;
-                break-inside: avoid;
             }
-            .cert-frame {
+            .cert-sheet {
                 box-sizing: border-box;
                 width: 194mm;
                 height: 281mm;
                 min-height: 0;
-                padding: 12mm 11mm 8mm;
-                border-width: 5px;
-                overflow: hidden;
-                display: flex;
-                flex-direction: column;
-                page-break-inside: avoid;
-                break-inside: avoid;
-            }
-            .cert-frame::before {
-                inset: 9px;
-            }
-            .cert-header {
-                padding: 4px 18px 12px;
-            }
-            .brand-mark {
-                width: 120px;
-                min-height: 58px;
-                padding: 7px 10px;
-                margin-bottom: 8px;
-            }
-            .brand-mark img {
-                max-width: 100px;
-                max-height: 46px;
-            }
-            .cert-kicker {
-                font-size: 10px;
-                margin-bottom: 5px;
+                padding: 12mm 17mm 10mm;
             }
             .cert-title {
-                font-size: 38px;
+                font-size: 34px;
             }
-            .cert-subtitle {
-                font-size: 14px;
-                margin-top: 6px;
+            .logo-wrap {
+                margin-bottom: 24px;
             }
-            .cert-body {
-                padding: 16px 14px 8px;
-                flex: 1 1 auto;
+            .logo-wrap img {
+                width: 150px;
             }
             .attestation {
-                font-size: 14px;
-                line-height: 1.5;
-                margin-bottom: 10px;
+                font-size: 13px;
             }
             .patient-name {
-                font-size: 34px;
-                margin: 4px auto 8px;
-                padding-bottom: 6px;
+                font-size: 29px;
+                margin-bottom: 22px;
             }
-            .cert-summary {
-                margin-bottom: 14px;
+            .fact-grid {
+                row-gap: 18px;
+                margin-bottom: 22px;
             }
-            .detail-grid {
-                gap: 7px;
-                margin: 14px 0 14px;
-            }
-            .meta-row {
-                padding: 8px 10px;
-                font-size: 12px;
-            }
+            .fact-value,
             .dose-table {
-                margin-top: 8px;
                 font-size: 12px;
             }
-            .dose-table th {
-                padding: 8px;
-                font-size: 10px;
-            }
+            .dose-table th,
             .dose-table td {
-                padding: 8px;
+                padding: 10px 13px;
             }
-            .seal-row {
-                margin-top: 22px;
-                gap: 16px;
+            .cert-bottom {
+                margin-top: 36px;
             }
-            .seal {
-                width: 104px;
-                height: 104px;
-                font-size: 10px;
-            }
-            .signature-line,
-            .cert-footer {
-                font-size: 11px;
-            }
-            .cert-footer {
-                flex: 0 0 auto;
-                margin-top: 8px;
-                padding-top: 8px;
-                font-size: 10px;
-                line-height: 1.35;
-            }
-            .verification-link {
-                display: block;
-                max-width: 100%;
-                margin-top: 3px;
-                color: var(--brand-dark) !important;
-                font-size: 9px;
-                line-height: 1.25;
-                overflow-wrap: anywhere;
-                word-break: break-word;
-                text-decoration: none;
+            .qr-block img {
+                width: 118px;
+                height: 118px;
             }
         }
     </style>
@@ -485,7 +438,7 @@ $verificationUrl = $registrant
     <header class="topbar">
         <div class="container d-flex justify-content-between align-items-center flex-wrap gap-3">
             <div>
-                <h1 class="h3 mb-1"><i class="fas fa-certificate me-2"></i>Vaccination Certificate</h1>
+                <h1 class="h4 mb-1"><i class="fas fa-certificate me-2"></i>Vaccination Certificate</h1>
                 <div class="opacity-75">MegaCare Pharmacy official vaccination record</div>
             </div>
             <a class="btn btn-outline-light" href="index.php"><i class="fas fa-house me-2"></i>Home</a>
@@ -521,89 +474,101 @@ $verificationUrl = $registrant
         </div>
 
         <main class="certificate">
-            <div class="cert-frame">
-                <section class="cert-header">
-                    <div class="brand-mark">
-                        <img src="assets/img/logo.png" alt="MegaCare Pharmacy logo">
-                    </div>
-                    <div class="cert-kicker">MegaCare Pharmacy</div>
-                    <h2 class="cert-title">Certificate of Vaccination</h2>
-                    <div class="cert-subtitle">Official Patient Vaccination Record</div>
-                </section>
+            <div class="cert-sheet">
+                <div class="logo-wrap">
+                    <img src="assets/img/logo.png" alt="MegaCare Pharmacy logo">
+                </div>
 
-                <section class="cert-body">
-                    <p class="attestation">
-                        This is to certify that the individual named below is registered with MegaCare Pharmacy and has the following vaccination record on file.
-                    </p>
+                <h2 class="cert-title">Certificate of Vaccination</h2>
+                <div class="cert-subtitle">Official Patient Vaccination Record</div>
+                <div class="rule"><i class="fas fa-shield-alt"></i></div>
 
-                    <div class="patient-name"><?= htmlspecialchars($registrant['first_name'] . ' ' . $registrant['last_name']) ?></div>
+                <p class="attestation">
+                    MegaCare Pharmacy hereby certifies that the undermentioned individual, has received
+                    <strong>the vaccination listed below</strong>
+                </p>
 
-                    <div class="cert-summary">
-                        <div class="patient-id"><i class="fas fa-barcode"></i><?= htmlspecialchars($registrant['id']) ?></div>
-                        <div class="status-pill <?= $isComplete ? 'status-complete' : 'status-progress' ?>">
-                            <i class="fas <?= $isComplete ? 'fa-check-circle' : 'fa-clock' ?>"></i>
-                            <?= $isComplete ? 'Vaccination Complete' : $completedDoses . '/3 Doses Recorded' ?>
+                <h3 class="patient-name"><?= htmlspecialchars($registrant['first_name'] . ' ' . $registrant['last_name']) ?></h3>
+
+                <section class="fact-grid">
+                    <div class="fact">
+                        <div class="fact-icon"><i class="fas fa-syringe"></i></div>
+                        <div>
+                            <div class="fact-label">Vaccine Type</div>
+                            <div class="fact-value"><?= htmlspecialchars(certValue($displayVaccineType)) ?></div>
                         </div>
                     </div>
-
-                    <div class="detail-grid">
-                        <div class="meta-row"><strong>Vaccine Type</strong><span><?= htmlspecialchars($displayVaccineType) ?></span></div>
-                        <div class="meta-row"><strong>Date of Birth</strong><span><?= htmlspecialchars($registrant['selected_date']) ?></span></div>
-                        <div class="meta-row"><strong>Registration Date</strong><span><?= date('F j, Y', strtotime($registrant['created_at'])) ?></span></div>
-                        <div class="meta-row"><strong>Location</strong><span><?= htmlspecialchars($registrant['city'] . ', ' . $registrant['country']) ?></span></div>
+                    <div class="fact">
+                        <div class="fact-icon"><i class="fas fa-calendar-alt"></i></div>
+                        <div>
+                            <div class="fact-label">Date of Birth</div>
+                            <div class="fact-value"><?= htmlspecialchars(certValue($registrant['selected_date'] ?? '')) ?></div>
+                        </div>
                     </div>
-
-                    <table class="dose-table">
-                        <thead>
-                            <tr>
-                                <th>Dose</th>
-                                <th>Status</th>
-                                <th>Vaccine Date</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>First Dose</td>
-                                <td><span class="dose-status"><?= doseDone($vaccination, 'first_dose') ? '<i class="fas fa-check-circle"></i>Completed' : 'Pending' ?></span></td>
-                                <td><?= doseDone($vaccination, 'first_dose') ? formatCertDate($vaccination['first_dose_date_taken'] ?? null) : 'Pending' ?></td>
-                            </tr>
-                            <tr>
-                                <td>Second Dose</td>
-                                <td><span class="dose-status"><?= doseDone($vaccination, 'second_dose') ? '<i class="fas fa-check-circle"></i>Completed' : 'Pending' ?></span></td>
-                                <td><?= doseDone($vaccination, 'second_dose') ? formatCertDate($vaccination['second_dose_date_taken'] ?? null) : 'Pending' ?></td>
-                            </tr>
-                            <tr>
-                                <td>Final Dose</td>
-                                <td><span class="dose-status"><?= doseDone($vaccination, 'final_dose') ? '<i class="fas fa-check-circle"></i>Completed' : 'Pending' ?></span></td>
-                                <td><?= doseDone($vaccination, 'final_dose') ? formatCertDate($vaccination['final_dose_date_taken'] ?? null) : 'Pending' ?></td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <div class="seal-row">
-                        <div class="signature-line">
-                            Authorized Officer<br>
-                            MegaCare Pharmacy
+                    <div class="fact">
+                        <div class="fact-icon"><i class="fas fa-calendar-check"></i></div>
+                        <div>
+                            <div class="fact-label">Registration Date</div>
+                            <div class="fact-value"><?= htmlspecialchars(formatCertDate($registrant['created_at'] ?? null)) ?></div>
                         </div>
-                        <div class="seal">
-                            Official<br>Record<br><?= date('Y') ?>
-                        </div>
-                        <div class="signature-line">
-                            Date Issued<br>
-                            <?= date('F j, Y') ?>
+                    </div>
+                    <div class="fact">
+                        <div class="fact-icon"><i class="fas fa-map-marker-alt"></i></div>
+                        <div>
+                            <div class="fact-label">Location</div>
+                            <div class="fact-value"><?= htmlspecialchars(certValue(($registrant['city'] ?? '') . ', ' . ($registrant['country'] ?? ''), 'Not recorded')) ?></div>
                         </div>
                     </div>
                 </section>
 
-                <footer class="cert-footer">
-                    <strong>Verification:</strong> <?= htmlspecialchars($registrant['id']) ?> &nbsp; | &nbsp;
-                    Generated <?= date('F j, Y g:i A') ?><br>
-                    <strong>Verify online:</strong>
-                    <a class="verification-link" href="<?= htmlspecialchars($verificationUrl) ?>">
-                        <?= htmlspecialchars($verificationUrl) ?>
-                    </a>
-                    This certificate is valid only when the registration number matches MegaCare Pharmacy records.
-                </footer>
+                <h4 class="section-label">Vaccination Record</h4>
+                <table class="dose-table">
+                    <thead>
+                        <tr>
+                            <th>Dose</th>
+                            <th>Batch No</th>
+                            <th>Vaccine Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>First Dose</td>
+                            <td><?= htmlspecialchars(doseDone($vaccination, 'first_dose') ? doseBatch($vaccination, 'first_dose_batch_no') : 'Pending') ?></td>
+                            <td><?= htmlspecialchars(doseDone($vaccination, 'first_dose') ? formatCertDate($vaccination['first_dose_date_taken'] ?? null) : 'Pending') ?></td>
+                        </tr>
+                        <tr>
+                            <td>Second Dose</td>
+                            <td><?= htmlspecialchars(doseDone($vaccination, 'second_dose') ? doseBatch($vaccination, 'second_dose_batch_no') : 'Pending') ?></td>
+                            <td><?= htmlspecialchars(doseDone($vaccination, 'second_dose') ? formatCertDate($vaccination['second_dose_date_taken'] ?? null) : 'Pending') ?></td>
+                        </tr>
+                        <tr>
+                            <td>Final Dose</td>
+                            <td><?= htmlspecialchars(doseDone($vaccination, 'final_dose') ? doseBatch($vaccination, 'final_dose_batch_no') : 'Pending') ?></td>
+                            <td><?= htmlspecialchars(doseDone($vaccination, 'final_dose') ? formatCertDate($vaccination['final_dose_date_taken'] ?? null) : 'Pending') ?></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <section class="cert-bottom">
+                    <div class="signature-block">
+                        <div class="line-content">
+                            <img class="signature-mark" src="assets/img/signature.png" alt="Authorized officer signature">
+                        </div>
+                        <div class="line">
+                            <div class="fine-value">Authorized Officer<br>MegaCare Pharmacy</div>
+                        </div>
+                    </div>
+                    <div class="qr-block">
+                        <img src="<?= htmlspecialchars($qrUrl) ?>" alt="Verification QR code">
+                    </div>
+                    <div class="issued-block">
+                        <div class="line-content issued-content">
+                            <div class="fine-label">Date Issued</div>
+                            <div class="fine-value"><?= date('F j, Y') ?></div>
+                        </div>
+                        <div class="line-below"></div>
+                    </div>
+                </section>
             </div>
         </main>
     <?php endif; ?>

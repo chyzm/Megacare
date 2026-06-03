@@ -71,12 +71,15 @@ try {
             client_id VARCHAR(64) NOT NULL,
             vaccination_type VARCHAR(100) NULL,
             first_dose TINYINT(1) NOT NULL DEFAULT 0,
+            first_dose_batch_no VARCHAR(80) NULL,
             first_dose_date_taken DATE NULL,
             first_dose_next_date DATE NULL,
             second_dose TINYINT(1) NOT NULL DEFAULT 0,
+            second_dose_batch_no VARCHAR(80) NULL,
             second_dose_date_taken DATE NULL,
             second_dose_next_date DATE NULL,
             final_dose TINYINT(1) NOT NULL DEFAULT 0,
+            final_dose_batch_no VARCHAR(80) NULL,
             final_dose_date_taken DATE NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
@@ -91,10 +94,13 @@ try {
                 }
         };
         $ensureVaccCol('vaccination_type', "vaccination_type VARCHAR(100) NULL AFTER client_id");
+        $ensureVaccCol('first_dose_batch_no', "first_dose_batch_no VARCHAR(80) NULL AFTER first_dose");
         $ensureVaccCol('first_dose_date_taken', "first_dose_date_taken DATE NULL AFTER first_dose");
         $ensureVaccCol('first_dose_next_date', "first_dose_next_date DATE NULL AFTER first_dose_date_taken");
+        $ensureVaccCol('second_dose_batch_no', "second_dose_batch_no VARCHAR(80) NULL AFTER second_dose");
         $ensureVaccCol('second_dose_date_taken', "second_dose_date_taken DATE NULL AFTER second_dose");
         $ensureVaccCol('second_dose_next_date', "second_dose_next_date DATE NULL AFTER second_dose_date_taken");
+        $ensureVaccCol('final_dose_batch_no', "final_dose_batch_no VARCHAR(80) NULL AFTER final_dose");
         $ensureVaccCol('final_dose_date_taken', "final_dose_date_taken DATE NULL AFTER final_dose");
 
         $clientType = $pdo->prepare("SELECT DATA_TYPE, CHARACTER_MAXIMUM_LENGTH FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'vaccination_status' AND COLUMN_NAME = 'client_id'");
